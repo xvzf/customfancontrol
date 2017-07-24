@@ -15,10 +15,6 @@ CPU_SPIN_TEMP=45
 CPU_MAX_TEMP=60
 
 
-HDD_MAX_TEMP=42
-HDD_CRIT_TEMP=50
-HDD_LIST="/dev/sda /dev/sdb /dev/sdc /dev/sdd"
-
 function fans_enable {
 	for i in $ALL_GRP; do
 		echo 1 > ${i}_enable
@@ -46,8 +42,10 @@ function get_max_hdd_temp {
 	MAX_HDD_TEMP_SYS=0
 
 	for i in $HDD_LIST; do
-		if [ $(hddtemp $i | sed 's/.* \([0-9]*\).*/\1/g') \> $MAX_HDD_TEMP_SYS ]; then
-			MAX_HDD_TEMP_SYS=$(hddtemp $i | sed "s/.* \([0-9]*\).*/\1/g")
+		if [ -z $(smartctl -i -n standby $i) ]; then
+			if [ $(hddtemp $i | sed 's/.* \([0-9]*\).*/\1/g') \> $MAX_HDD_TEMP_SYS ]; then
+				MAX_HDD_TEMP_SYS=$(hddtemp $i | sed "s/.* \([0-9]*\).*/\1/g")
+			fi
 		fi
 	done
 
@@ -92,6 +90,5 @@ function set_hdd_fan_speed {
 while true; do
 	fans_enable
 	set_cpu_fan_speed
-	set_hdd_fan_speed
 	sleep 5
 done
