@@ -1,0 +1,10 @@
+[Unit]
+Description=custom fan control
+After=syslogd.target
+
+[Service]
+ExecStart=/usr/bin/customfancontrol
+
+[Install]
+WantedBy=multi-user.target
+

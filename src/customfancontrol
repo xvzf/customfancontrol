@@ -1,0 +1,97 @@
+#!/bin/bash
+
+
+FRONT_FAN_TOP="/sys/class/hwmon/hwmon1/pwm1"
+FRONT_FAN_BOTTOM="/sys/class/hwmon/hwmon1/pwm4"
+BACK_FAN="/sys/class/hwmon/hwmon1/pwm3"
+CPU_FAN_1="/sys/class/hwmon/hwmon1/pwm2"
+CPU_FAN_2="/sys/class/hwmon/hwmon1/pwm5"
+
+CPU_GRP="$CPU_FAN_1 $CPU_FAN_2 $BACK_FAN"
+HDD_GRP="$FRONT_FAN_TOP $FRONT_FAN_BOTTOM"
+ALL_GRP="$CPU_GRP $HDD_GRP"
+
+CPU_SPIN_TEMP=45
+CPU_MAX_TEMP=60
+
+
+HDD_MAX_TEMP=42
+HDD_CRIT_TEMP=50
+HDD_LIST="/dev/sda /dev/sdb /dev/sdc /dev/sdd"
+
+function fans_enable {
+	for i in $ALL_GRP; do
+		echo 1 > ${i}_enable
+	done
+}
+
+
+function default_speed {
+	for i in $ALL_GRP; do
+		echo 125 > $i
+	done
+}
+
+function max_speed {
+	for i in $ALL_GRP; do
+		echo 255 > $i
+	done
+}
+
+function get_cpu_temp {
+	echo $(sensors | grep 'Package id 0' | sed 's/.*:  +\([0-9][0-9]\).*/\1/g') 
+}
+
+function get_max_hdd_temp {
+	MAX_HDD_TEMP_SYS=0
+
+	for i in $HDD_LIST; do
+		if [ $(hddtemp $i | sed 's/.* \([0-9]*\).*/\1/g') \> $MAX_HDD_TEMP_SYS ]; then
+			MAX_HDD_TEMP_SYS=$(hddtemp $i | sed "s/.* \([0-9]*\).*/\1/g")
+		fi
+	done
+
+	echo $MAX_HDD_TEMP_SYS
+}
+
+function set_cpu_fan_speed {
+	CPU_TARGET_SPEED=125
+
+	if [ $(get_cpu_temp) \< $CPU_SPIN_TEMP ]; then
+		CPU_TARGET_SPEED=0
+	fi
+
+	if [ $(get_cpu_temp) \> $CPU_MAX_TEMP ]; then
+		CPU_TARGET_SPEED=255
+	fi
+
+	for i in $CPU_GRP; do
+		echo $CPU_TARGET_SPEED > $i
+	done
+}
+
+function set_hdd_fan_speed {
+	HDD_TARGET_SPEED=125
+
+	MAX_HDD_TEMP_SYS=$(get_max_hdd_temp)
+	if [ $MAX_HDD_TEMP_SYS \> $HDD_MAX_TEMP ]; then
+		HDD_TARGET_SPEED=175
+	fi
+
+	if [ $MAX_HDD_TEMP_SYS \> $HDD_CRIT_TEMP ]; then
+		max_speed
+		return 0
+	fi
+
+	for i in $HDD_GRP; do
+		echo $HDD_TARGET_SPEED > $i
+	done
+}
+
+
+while true; do
+	fans_enable
+	set_cpu_fan_speed
+	set_hdd_fan_speed
+	sleep 5
+done
