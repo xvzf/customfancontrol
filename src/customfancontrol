@@ -8,7 +8,7 @@ CPU_FAN_1="/sys/class/hwmon/hwmon1/pwm2"
 CPU_FAN_2="/sys/class/hwmon/hwmon1/pwm5"
 
 CPU_GRP="$CPU_FAN_1 $CPU_FAN_2 $BACK_FAN"
-HDD_GRP="$FRONT_FAN_TOP $FRONT_FAN_BOTTOM"
+FRONT_GRP="$FRONT_FAN_TOP $FRONT_FAN_BOTTOM"
 ALL_GRP="$CPU_GRP $HDD_GRP"
 
 CPU_SPIN_TEMP=45
@@ -83,6 +83,14 @@ function set_hdd_fan_speed {
 
 	for i in $HDD_GRP; do
 		echo $HDD_TARGET_SPEED > $i
+	done
+}
+
+function set_front_fan_speed {
+	FRONT_TARGET_SPEED=125
+
+	for i in $FRONT_GRP; do
+		echo $FRONT_TARGET_SPEED > $i
 	done
 }
 
