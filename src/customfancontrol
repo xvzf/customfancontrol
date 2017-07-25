@@ -98,5 +98,6 @@ function set_front_fan_speed {
 while true; do
 	fans_enable
 	set_cpu_fan_speed
+	set_front_fan_speed
 	sleep 5
 done

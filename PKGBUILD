@@ -1,7 +1,7 @@
 pkgname=customfancontrol
 pkgdesc='Just my custom fan control...'
 pkgver=0.1
-pkgrel=3
+pkgrel=4
 arch=('x86_64')
 url='https://github.com/xvzf/customfancontrol'
 license=('GPL3')
