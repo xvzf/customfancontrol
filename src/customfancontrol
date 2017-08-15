@@ -1,14 +1,14 @@
 #!/bin/bash
 
 
-FRONT_FAN_TOP="/sys/class/hwmon/hwmon1/pwm1"
-FRONT_FAN_BOTTOM="/sys/class/hwmon/hwmon1/pwm4"
+FRONT_FAN="/sys/class/hwmon/hwmon1/pwm1"
+FRONT_FAN_HDD="/sys/class/hwmon/hwmon1/pwm4"
 BACK_FAN="/sys/class/hwmon/hwmon1/pwm3"
 CPU_FAN_1="/sys/class/hwmon/hwmon1/pwm2"
 CPU_FAN_2="/sys/class/hwmon/hwmon1/pwm5"
 
 CPU_GRP="$CPU_FAN_1 $CPU_FAN_2 $BACK_FAN"
-FRONT_GRP="$FRONT_FAN_TOP $FRONT_FAN_BOTTOM"
+FRONT_GRP="$FRONT_FAN $FRONT_FAN_HDD"
 ALL_GRP="$CPU_GRP $HDD_GRP"
 
 CPU_SPIN_TEMP=45
@@ -35,7 +35,7 @@ function max_speed {
 }
 
 function get_cpu_temp {
-	echo $(sensors | grep 'Package id 0' | sed 's/.*:  +\([0-9][0-9]\).*/\1/g') 
+	echo $(sensors | grep 'Package id 0' | sed 's/.*:  +\([0-9][0-9]\).*/\1/g')
 }
 
 function get_max_hdd_temp {
@@ -89,11 +89,18 @@ function set_hdd_fan_speed {
 function set_front_fan_speed {
 	FRONT_TARGET_SPEED=125
 
-	for i in $FRONT_GRP; do
+	for i in $FRONT_FAN; do
 		echo $FRONT_TARGET_SPEED > $i
 	done
-}
 
+
+	blkid | grep "sd[efg]" > /dev/null
+	if [ $? -eq 0 ]; then
+		echo $(($FRONT_TARGET_SPEED + 50)) > $FRONT_FAN_HDD
+	else
+		echo 0 > $FRONT_FAN_HDD
+	fi
+}
 
 while true; do
 	fans_enable
